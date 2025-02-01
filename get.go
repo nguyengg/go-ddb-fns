@@ -12,7 +12,7 @@ import (
 // GetOpts customises [Fns.Get] operations per each invocation.
 type GetOpts struct {
 	// TableName modifies the [dynamodb.GetItemInput.TableName]
-	TableName string
+	TableName *string
 	// ConsistentRead modifies the [dynamodb.GetItemInput.ConsistentRead]
 	ConsistentRead *bool
 	// ExpressionAttributeNames modifies the [dynamodb.GetItemInput.ExpressionAttributeNames]
@@ -74,7 +74,7 @@ func (f *Fns) Get(v interface{}, optFns ...func(*GetOpts)) (*dynamodb.GetItemInp
 
 	return &dynamodb.GetItemInput{
 		Key:                      key,
-		TableName:                &opts.TableName,
+		TableName:                opts.TableName,
 		ConsistentRead:           opts.ConsistentRead,
 		ExpressionAttributeNames: opts.ExpressionAttributeNames,
 		ProjectionExpression:     opts.ProjectionExpression,
