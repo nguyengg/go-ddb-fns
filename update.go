@@ -49,11 +49,13 @@ func (f *Fns) Update(v interface{}, update expression.UpdateBuilder, optFns ...f
 	for _, fn := range optFns {
 		fn(opts)
 	}
-
-	iv := reflect.ValueOf(v)
 	attrs, err := f.loadOrParse(reflect.TypeOf(v))
 	if err != nil {
 		return nil, err
+	}
+
+	if opts.TableName == nil {
+		opts.TableName = attrs.TableName
 	}
 
 	// UpdateItem only needs the key.
@@ -70,6 +72,7 @@ func (f *Fns) Update(v interface{}, update expression.UpdateBuilder, optFns ...f
 		}
 	}
 
+	iv := reflect.ValueOf(v)
 	condition := expression.ConditionBuilder{}
 
 	if versionAttr := attrs.Version; !opts.DisableOptimisticLocking && versionAttr != nil {

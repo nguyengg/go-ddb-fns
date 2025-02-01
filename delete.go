@@ -40,10 +40,13 @@ func (f *Fns) Delete(v interface{}, optFns ...func(ops *DeleteOps)) (*dynamodb.D
 		fn(opts)
 	}
 
-	iv := reflect.ValueOf(v)
 	attrs, err := f.loadOrParse(reflect.TypeOf(v))
 	if err != nil {
 		return nil, err
+	}
+
+	if opts.TableName == nil {
+		opts.TableName = attrs.TableName
 	}
 
 	// DeleteItem only needs the key.
@@ -60,6 +63,7 @@ func (f *Fns) Delete(v interface{}, optFns ...func(ops *DeleteOps)) (*dynamodb.D
 		}
 	}
 
+	iv := reflect.ValueOf(v)
 	condition := expression.ConditionBuilder{}
 
 	if versionAttr := attrs.Version; !opts.DisableOptimisticLocking && versionAttr != nil {

@@ -50,10 +50,13 @@ func (f *Fns) Put(v interface{}, optFns ...func(*PutOpts)) (*dynamodb.PutItemInp
 		fn(opts)
 	}
 
-	iv := reflect.ValueOf(v)
 	attrs, err := f.loadOrParse(reflect.TypeOf(v))
 	if err != nil {
 		return nil, err
+	}
+
+	if opts.TableName == nil {
+		opts.TableName = attrs.TableName
 	}
 
 	// PutItem requires the entire map[string]AttributeValue item.
@@ -66,6 +69,7 @@ func (f *Fns) Put(v interface{}, optFns ...func(*PutOpts)) (*dynamodb.PutItemInp
 		item = asMap.Value
 	}
 
+	iv := reflect.ValueOf(v)
 	condition := expression.ConditionBuilder{}
 
 	if versionAttr := attrs.Version; !opts.DisableOptimisticLocking && versionAttr != nil {

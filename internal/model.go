@@ -16,6 +16,7 @@ var (
 type Model struct {
 	// StructType is the type of the struct from which the Model instance was parsed.
 	StructType   reflect.Type
+	TableName    *string
 	HashKey      *Attribute
 	SortKey      *Attribute
 	Version      *Attribute
@@ -67,6 +68,11 @@ func ParseFromType(typ reflect.Type) (*Model, error) {
 				}
 
 				m.HashKey = attr
+				if v, ok := structField.Tag.Lookup("tableName"); !ok {
+					return nil, fmt.Errorf(`missing tableName tag on hashkey field`)
+				} else if v != "" {
+					m.TableName = &v
+				}
 			case "sortkey":
 				if m.SortKey != nil {
 					return nil, fmt.Errorf(`found multiple sortkey fields in type "%s"`, typ.Name())

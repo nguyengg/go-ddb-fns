@@ -43,6 +43,10 @@ func (f *Fns) Get(v interface{}, optFns ...func(*GetOpts)) (*dynamodb.GetItemInp
 		return nil, err
 	}
 
+	if opts.TableName == nil {
+		opts.TableName = attrs.TableName
+	}
+
 	// GetItem only needs the key.
 	var key map[string]types.AttributeValue
 	if av, err := f.Encoder.Encode(v); err != nil {
@@ -83,6 +87,12 @@ func (f *Fns) Get(v interface{}, optFns ...func(*GetOpts)) (*dynamodb.GetItemInp
 }
 
 // DoGet performs a [Fns.Get] and then executes the request with the specified DynamoDB client.
+//
+// The hash key attribute should have a `tableName` tag such as:
+//
+//	Field string `dynamodbav:"-,hashkey" tableName:"my-table"`
+//
+// If the field doesn't have `tableName` tag, you must override the [GetOpts.TableName] for the request to succeed.
 func (f *Fns) DoGet(ctx context.Context, client *dynamodb.Client, v interface{}, optFns ...func(*GetOpts)) (*dynamodb.GetItemOutput, error) {
 	input, err := f.Get(v, optFns...)
 	if err != nil {

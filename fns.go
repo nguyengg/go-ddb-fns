@@ -16,7 +16,7 @@ import (
 //	// Hash key is required, sort key is optional. If present, their types must marshal to a valid key type
 //	// (S, N, or B). The keys are required to make `attribute_not_exists` work on creating the condition expression
 //	// for the PutItem request of an item that shouldn't exist in database.
-//	Field string `dynamodbav:"-,hashkey"`
+//	Field string `dynamodbav:"-,hashkey" tableName:"my-table"`
 //	Field string `dynamodbav:"-,sortkey"`
 //
 //	// Versioned attribute must have `version` show up in its `dynamodbav` tag. It must be a numeric type that
