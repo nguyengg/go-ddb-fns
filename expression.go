@@ -32,6 +32,39 @@ func Or(left expression.ConditionBuilder, right expression.ConditionBuilder, oth
 	}
 }
 
+// UpdateBuilder helper that offers SetOrRemove in addition to simplifying existing methods from expression.UpdateBuilder.
+//
+// The zero-value is ready for use. At least one update expression must be created or the eventual expression building
+// will fail.
+type UpdateBuilder struct {
+	update expression.UpdateBuilder
+}
+
+// NewUpdateBuilder creates a new zero-value UpdateBuilder.
+func NewUpdateBuilder() *UpdateBuilder {
+	return &UpdateBuilder{}
+}
+
+// Delete adds an expression.UpdateBuilder.Delete expression.
+//
+// Like all other UpdateBuilder methods, the name and value will be wrapped with an `expression.Name` and
+// `expression.Value`.
+func (b *UpdateBuilder) Delete(name string, value interface{}) *UpdateBuilder {
+	b.update = b.update.Delete(expression.Name(name), expression.Value(value))
+
+	return b
+}
+
+// Set adds an expression.UpdateBuilder.Set expression.
+//
+// Like all other UpdateBuilder methods, the name and value will be wrapped with an `expression.Name` and
+// `expression.Value`.
+func (b *UpdateBuilder) Set(name string, value interface{}) *UpdateBuilder {
+	b.update = b.update.Set(expression.Name(name), expression.Value(value))
+
+	return b
+}
+
 // SetOrRemove adds either Set or Remove action to the update expression.
 //
 // If set is true, a SET action will be added.
@@ -60,16 +93,26 @@ func Or(left expression.ConditionBuilder, right expression.ConditionBuilder, oth
 //		update = SetOrRemove(expression.UpdateBuilder{}, body.Notes != "", method != "PATCH", "notes", body.Notes)
 //	}
 //
-// The name and value will be wrapped with an `expression.Name` and `expression.Value` so don't bother wrapping them
-// ahead of time.
-func SetOrRemove(update expression.UpdateBuilder, set, remove bool, name string, value interface{}) expression.UpdateBuilder {
+// Like all other UpdateBuilder methods, the name and value will be wrapped with an `expression.Name` and
+// `expression.Value`.
+func (b *UpdateBuilder) SetOrRemove(set, remove bool, name string, value interface{}) *UpdateBuilder {
 	if set {
-		return update.Set(expression.Name(name), expression.Value(value))
+		b.update = b.update.Set(expression.Name(name), expression.Value(value))
 	}
 
 	if remove {
-		return update.Remove(expression.Name(name))
+		b.update = b.update.Remove(expression.Name(name))
 	}
 
-	return update
+	return b
+}
+
+// Remove adds an expression.UpdateBuilder.Set expression.
+//
+// Like all other UpdateBuilder methods, the name and value will be wrapped with an `expression.Name` and
+// `expression.Value`.
+func (b *UpdateBuilder) Remove(name string) *UpdateBuilder {
+	b.update = b.update.Remove(expression.Name(name))
+
+	return b
 }
