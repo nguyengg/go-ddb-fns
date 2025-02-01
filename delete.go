@@ -63,7 +63,7 @@ func (f *Fns) Delete(v interface{}, optFns ...func(ops *DeleteOps)) (*dynamodb.D
 		}
 	}
 
-	iv := reflect.ValueOf(v)
+	iv := reflect.Indirect(reflect.ValueOf(v))
 	condition := expression.ConditionBuilder{}
 
 	if versionAttr := attrs.Version; !opts.DisableOptimisticLocking && versionAttr != nil {

@@ -96,7 +96,8 @@ func TestFns_UpdateIncrementVersion(t *testing.T) {
 	// this is to make sure the input item is not mutated.
 	before := MustToJSON(input)
 
-	got, err := Update(input, expression.Set(expression.Name("notes"), expression.Value("world!")))
+	// use pointer to input here to test pointer case as well.
+	got, err := Update(&input, expression.Set(expression.Name("notes"), expression.Value("world!")))
 	if err != nil {
 		t.Errorf("Update() error = %v", err)
 		return

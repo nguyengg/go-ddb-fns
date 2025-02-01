@@ -88,7 +88,8 @@ func TestFns_PutIncrementVersion(t *testing.T) {
 	// this is to make sure the input item is not mutated.
 	before := MustToJSON(input)
 
-	got, err := Put(input)
+	// use pointer to input here to test pointer case as well.
+	got, err := Put(&input)
 	if err != nil {
 		t.Errorf("Put() error = %v", err)
 		return

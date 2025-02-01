@@ -72,7 +72,7 @@ func (f *Fns) Update(v interface{}, update expression.UpdateBuilder, optFns ...f
 		}
 	}
 
-	iv := reflect.ValueOf(v)
+	iv := reflect.Indirect(reflect.ValueOf(v))
 	condition := expression.ConditionBuilder{}
 
 	if versionAttr := attrs.Version; !opts.DisableOptimisticLocking && versionAttr != nil {

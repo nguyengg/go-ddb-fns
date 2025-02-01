@@ -33,6 +33,15 @@ func TestFns_DeleteWithVersion(t *testing.T) {
 	assert.Equal(t, map[string]string{"#0": "version"}, got.ExpressionAttributeNames)
 	assert.Equal(t, map[string]types.AttributeValue{":0": &types.AttributeValueMemberN{Value: "3"}}, got.ExpressionAttributeValues)
 	assert.Equal(t, map[string]types.AttributeValue{"id": &types.AttributeValueMemberS{Value: "hello"}, "sort": &types.AttributeValueMemberS{Value: "world"}}, got.Key)
+
+	// use pointer to input here to test pointer case as well.
+	got2, err := Delete(&input)
+	if err != nil {
+		t.Errorf("Delete() error = %v", err)
+		return
+	}
+
+	assert.Equal(t, got, got2)
 }
 
 func TestFns_DeleteNoVersion(t *testing.T) {

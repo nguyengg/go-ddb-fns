@@ -69,7 +69,7 @@ func (f *Fns) Put(v interface{}, optFns ...func(*PutOpts)) (*dynamodb.PutItemInp
 		item = asMap.Value
 	}
 
-	iv := reflect.ValueOf(v)
+	iv := reflect.Indirect(reflect.ValueOf(v))
 	condition := expression.ConditionBuilder{}
 
 	if versionAttr := attrs.Version; !opts.DisableOptimisticLocking && versionAttr != nil {
