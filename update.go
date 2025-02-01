@@ -1,6 +1,7 @@
 package ddbfns
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -143,9 +144,24 @@ func (f *Fns) Update(v interface{}, update expression.UpdateBuilder, optFns ...f
 	}, nil
 }
 
+// DoUpdate performs a [Fns.Update] and then executes the request with the specified DynamoDB client.
+func (f *Fns) DoUpdate(ctx context.Context, client *dynamodb.Client, v interface{}, update expression.UpdateBuilder, optFns ...func(*UpdateOpts)) (*dynamodb.UpdateItemOutput, error) {
+	input, err := f.Update(v, update, optFns...)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.UpdateItem(ctx, input)
+}
+
 // Update creates the UpdateItem request for the given item and at least one update expression.
 //
 // Update is a wrapper around [DefaultFns.Update]; see [Fns.Update] for more information.
 func Update(v interface{}, update expression.UpdateBuilder, optFns ...func(opts *UpdateOpts)) (*dynamodb.UpdateItemInput, error) {
 	return DefaultFns.Update(v, update, optFns...)
+}
+
+// DoUpdate is a wrapper around [DefaultFns.DoUpdate]; see [Fns.DoUpdate] for more information.
+func DoUpdate(ctx context.Context, client *dynamodb.Client, v interface{}, update expression.UpdateBuilder, optFns ...func(*UpdateOpts)) (*dynamodb.UpdateItemOutput, error) {
+	return DefaultFns.DoUpdate(ctx, client, v, update, optFns...)
 }

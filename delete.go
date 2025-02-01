@@ -1,6 +1,7 @@
 package ddbfns
 
 import (
+	"context"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -110,9 +111,24 @@ func (f *Fns) Delete(v interface{}, optFns ...func(ops *DeleteOps)) (*dynamodb.D
 	}, nil
 }
 
+// DoDelete performs a [Fns.DoDelete] and then executes the request with the specified DynamoDB client.
+func (f *Fns) DoDelete(ctx context.Context, client *dynamodb.Client, v interface{}, optFns ...func(ops *DeleteOps)) (*dynamodb.DeleteItemOutput, error) {
+	input, err := f.Delete(v, optFns...)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.DeleteItem(ctx, input)
+}
+
 // Delete creates the DeleteItem request for the given item.
 //
 // Delete is a wrapper around [DefaultFns.Delete]; see [Fns.Delete] for more information.
 func Delete(v interface{}) (*dynamodb.DeleteItemInput, error) {
 	return DefaultFns.Delete(v)
+}
+
+// DoDelete is a wrapper around [DefaultFns.DoDelete]; see [Fns.DoDelete] for more information.
+func DoDelete(ctx context.Context, client *dynamodb.Client, v interface{}, optFns ...func(ops *DeleteOps)) (*dynamodb.DeleteItemOutput, error) {
+	return DefaultFns.DoDelete(ctx, client, v, optFns...)
 }

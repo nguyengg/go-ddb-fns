@@ -1,6 +1,7 @@
 package ddbfns
 
 import (
+	"context"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -81,11 +82,26 @@ func (f *Fns) Get(v interface{}, optFns ...func(*GetOpts)) (*dynamodb.GetItemInp
 	}, nil
 }
 
+// DoGet performs a [Fns.Get] and then executes the request with the specified DynamoDB client.
+func (f *Fns) DoGet(ctx context.Context, client *dynamodb.Client, v interface{}, optFns ...func(*GetOpts)) (*dynamodb.GetItemOutput, error) {
+	input, err := f.Get(v, optFns...)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.GetItem(ctx, input)
+}
+
 // Get creates the GetItem request for the given item.
 //
 // Get is a wrapper around [DefaultFns.Get]; see [Fns.Get] for more information.
 func Get(v interface{}, optFns ...func(*GetOpts)) (*dynamodb.GetItemInput, error) {
 	return DefaultFns.Get(v, optFns...)
+}
+
+// DoGet is a wrapper around [DefaultFns.DoGet]; see [Fns.DoGet] for more information.
+func DoGet(ctx context.Context, client *dynamodb.Client, v interface{}, optFns ...func(*GetOpts)) (*dynamodb.GetItemOutput, error) {
+	return DefaultFns.DoGet(ctx, client, v, optFns...)
 }
 
 // WithProjectionExpression can be used to set GetOpts.ProjectionExpression and GetOpts.ExpressionAttributeNames.

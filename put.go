@@ -1,6 +1,7 @@
 package ddbfns
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -169,9 +170,24 @@ func (f *Fns) Put(v interface{}, optFns ...func(*PutOpts)) (*dynamodb.PutItemInp
 	}, nil
 }
 
+// DoPut performs a [Fns.Put] and then executes the request with the specified DynamoDB client.
+func (f *Fns) DoPut(ctx context.Context, client *dynamodb.Client, v interface{}, optFns ...func(*PutOpts)) (*dynamodb.PutItemOutput, error) {
+	input, err := f.Put(v, optFns...)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.PutItem(ctx, input)
+}
+
 // Put creates the PutItem request for the given item.
 //
 // Put is a wrapper around [DefaultFns.Put]; see [Fns.Put] for more information.
 func Put(v interface{}, optFns ...func(*PutOpts)) (*dynamodb.PutItemInput, error) {
+	return DefaultFns.Put(v, optFns...)
+}
+
+// DoPut is a wrapper around [DefaultFns.DoPut]; see [Fns.DoPut] for more information.
+func DoPut(ctx context.Context, client *dynamodb.Client, v interface{}, optFns ...func(*PutOpts)) (*dynamodb.PutItemInput, error) {
 	return DefaultFns.Put(v, optFns...)
 }
