@@ -30,6 +30,8 @@ type UpdateOpts struct {
 	ReturnValues types.ReturnValue
 	// ReturnValuesOnConditionCheckFailure modifies the [dynamodb.UpdateItemInput.ReturnValuesOnConditionCheckFailure].
 	ReturnValuesOnConditionCheckFailure types.ReturnValuesOnConditionCheckFailure
+
+	out interface{}
 }
 
 // Update creates the UpdateItem request for the given item and at least one update expression.
@@ -149,12 +151,26 @@ func (f *Fns) Update(v interface{}, update expression.UpdateBuilder, optFns ...f
 
 // DoUpdate performs a [Fns.Update] and then executes the request with the specified DynamoDB client.
 func (f *Fns) DoUpdate(ctx context.Context, client *dynamodb.Client, v interface{}, update expression.UpdateBuilder, optFns ...func(*UpdateOpts)) (*dynamodb.UpdateItemOutput, error) {
+	var opts *UpdateOpts
+	optFns = append(optFns, func(o *UpdateOpts) {
+		opts = o
+	})
+
 	input, err := f.Update(v, update, optFns...)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.UpdateItem(ctx, input)
+	updateItemOutput, err := client.UpdateItem(ctx, input)
+	if err != nil || opts.out == nil {
+		return updateItemOutput, err
+	}
+
+	if item := updateItemOutput.Attributes; len(item) != 0 {
+		err = f.Decoder.Decode(&types.AttributeValueMemberM{Value: item}, opts.out)
+	}
+
+	return updateItemOutput, err
 }
 
 // Update creates the UpdateItem request for the given item and at least one update expression.

@@ -30,6 +30,8 @@ type PutOpts struct {
 	ReturnValues types.ReturnValue
 	// ReturnValuesOnConditionCheckFailure modifies the [dynamodb.PutItemInput.ReturnValuesOnConditionCheckFailure].
 	ReturnValuesOnConditionCheckFailure types.ReturnValuesOnConditionCheckFailure
+
+	out interface{}
 }
 
 // Put creates the PutItem request for the given item.
@@ -176,12 +178,26 @@ func (f *Fns) Put(v interface{}, optFns ...func(*PutOpts)) (*dynamodb.PutItemInp
 
 // DoPut performs a [Fns.Put] and then executes the request with the specified DynamoDB client.
 func (f *Fns) DoPut(ctx context.Context, client *dynamodb.Client, v interface{}, optFns ...func(*PutOpts)) (*dynamodb.PutItemOutput, error) {
+	var opts *PutOpts
+	optFns = append(optFns, func(o *PutOpts) {
+		opts = o
+	})
+
 	input, err := f.Put(v, optFns...)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.PutItem(ctx, input)
+	putItemOutput, err := client.PutItem(ctx, input)
+	if err != nil || opts.out == nil {
+		return putItemOutput, err
+	}
+
+	if item := putItemOutput.Attributes; len(item) != 0 {
+		err = f.Decoder.Decode(&types.AttributeValueMemberM{Value: item}, opts.out)
+	}
+
+	return putItemOutput, err
 }
 
 // Put creates the PutItem request for the given item.

@@ -3,10 +3,11 @@ package ddbfns
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"reflect"
 )
 
 // GetOpts customises [Fns.Get] operations per each invocation.
@@ -23,6 +24,7 @@ type GetOpts struct {
 	ReturnConsumedCapacity types.ReturnConsumedCapacity
 
 	projectionExpressionNames []string
+	out                       interface{}
 }
 
 // Get creates the GetItem request for the given item.
@@ -94,12 +96,26 @@ func (f *Fns) Get(v interface{}, optFns ...func(*GetOpts)) (*dynamodb.GetItemInp
 //
 // If the field doesn't have `tableName` tag, you must override the [GetOpts.TableName] for the request to succeed.
 func (f *Fns) DoGet(ctx context.Context, client *dynamodb.Client, v interface{}, optFns ...func(*GetOpts)) (*dynamodb.GetItemOutput, error) {
+	var opts *GetOpts
+	optFns = append(optFns, func(o *GetOpts) {
+		opts = o
+	})
+
 	input, err := f.Get(v, optFns...)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.GetItem(ctx, input)
+	getItemOutput, err := client.GetItem(ctx, input)
+	if err != nil || opts.out == nil {
+		return getItemOutput, err
+	}
+
+	if item := getItemOutput.Item; len(item) != 0 {
+		err = f.Decoder.Decode(&types.AttributeValueMemberM{Value: item}, opts.out)
+	}
+
+	return getItemOutput, err
 }
 
 // Get creates the GetItem request for the given item.

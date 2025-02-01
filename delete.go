@@ -3,11 +3,12 @@ package ddbfns
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strconv"
+
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"reflect"
-	"strconv"
 )
 
 // DeleteOps customises [Fns.Delete] operations per each invocation.
@@ -27,6 +28,8 @@ type DeleteOps struct {
 	ReturnValues types.ReturnValue
 	// ReturnValuesOnConditionCheckFailure modifies the [dynamodb.DeleteItemInput.ReturnValuesOnConditionCheckFailure].
 	ReturnValuesOnConditionCheckFailure types.ReturnValuesOnConditionCheckFailure
+
+	out interface{}
 }
 
 // Delete creates the DeleteItem request for the given item.
@@ -117,12 +120,26 @@ func (f *Fns) Delete(v interface{}, optFns ...func(ops *DeleteOps)) (*dynamodb.D
 
 // DoDelete performs a [Fns.DoDelete] and then executes the request with the specified DynamoDB client.
 func (f *Fns) DoDelete(ctx context.Context, client *dynamodb.Client, v interface{}, optFns ...func(ops *DeleteOps)) (*dynamodb.DeleteItemOutput, error) {
+	var opts *DeleteOps
+	optFns = append(optFns, func(o *DeleteOps) {
+		opts = o
+	})
+
 	input, err := f.Delete(v, optFns...)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.DeleteItem(ctx, input)
+	deleteItemOutput, err := client.DeleteItem(ctx, input)
+	if err != nil || opts.out == nil {
+		return deleteItemOutput, err
+	}
+
+	if item := deleteItemOutput.Attributes; len(item) != 0 {
+		err = f.Decoder.Decode(&types.AttributeValueMemberM{Value: item}, opts.out)
+	}
+
+	return deleteItemOutput, err
 }
 
 // Delete creates the DeleteItem request for the given item.
