@@ -23,12 +23,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/nguyengg/go-ddb-fns"
+	ddbfns "github.com/nguyengg/go-ddb-fns"
 	"time"
 )
 
 type Item struct {
-	Id           string    `dynamodbav:"id,hashkey"`
+	Id           string    `dynamodbav:"id,hashkey" tableName:"my-table"`
 	Sort         string    `dynamodbav:"sort,sortkey"`
 	Version      int64     `dynamodbav:"version,version"`
 	CreatedTime  time.Time `dynamodbav:"createdTime,createdTime,unixtime"`
