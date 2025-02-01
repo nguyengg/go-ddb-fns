@@ -29,7 +29,8 @@ type DeleteOps struct {
 	// ReturnValuesOnConditionCheckFailure modifies the [dynamodb.DeleteItemInput.ReturnValuesOnConditionCheckFailure].
 	ReturnValuesOnConditionCheckFailure types.ReturnValuesOnConditionCheckFailure
 
-	out interface{}
+	condition expression.ConditionBuilder
+	out       interface{}
 }
 
 // Delete creates the DeleteItem request for the given item.
@@ -67,7 +68,6 @@ func (f *Fns) Delete(v interface{}, optFns ...func(ops *DeleteOps)) (*dynamodb.D
 	}
 
 	iv := reflect.Indirect(reflect.ValueOf(v))
-	condition := expression.ConditionBuilder{}
 
 	if versionAttr := attrs.Version; !opts.DisableOptimisticLocking && versionAttr != nil {
 		version, err := versionAttr.Get(iv)
@@ -77,20 +77,20 @@ func (f *Fns) Delete(v interface{}, optFns ...func(ops *DeleteOps)) (*dynamodb.D
 
 		switch {
 		case version.IsZero():
-			condition = expression.Name(attrs.HashKey.Name).AttributeNotExists()
+			opts.And(expression.Name(attrs.HashKey.Name).AttributeNotExists())
 		case version.CanInt():
-			condition = expression.Name(versionAttr.Name).Equal(expression.Value(&types.AttributeValueMemberN{Value: strconv.FormatInt(version.Int(), 10)}))
+			opts.And(expression.Name(versionAttr.Name).Equal(expression.Value(&types.AttributeValueMemberN{Value: strconv.FormatInt(version.Int(), 10)})))
 		case version.CanUint():
-			condition = expression.Name(versionAttr.Name).Equal(expression.Value(&types.AttributeValueMemberN{Value: strconv.FormatUint(version.Uint(), 10)}))
+			opts.And(expression.Name(versionAttr.Name).Equal(expression.Value(&types.AttributeValueMemberN{Value: strconv.FormatUint(version.Uint(), 10)})))
 		case version.CanFloat():
-			condition = expression.Name(versionAttr.Name).Equal(expression.Value(&types.AttributeValueMemberN{Value: strconv.FormatFloat(version.Float(), 'f', -1, 64)}))
+			opts.And(expression.Name(versionAttr.Name).Equal(expression.Value(&types.AttributeValueMemberN{Value: strconv.FormatFloat(version.Float(), 'f', -1, 64)})))
 		default:
 			panic(fmt.Errorf("version attribute's type (%s) is unknown numeric type", version.Type()))
 		}
 	}
 
-	if condition.IsSet() {
-		expr, err := expression.NewBuilder().WithCondition(condition).Build()
+	if opts.condition.IsSet() {
+		expr, err := expression.NewBuilder().WithCondition(opts.condition).Build()
 		if err != nil {
 			return nil, fmt.Errorf("build expressions error: %w", err)
 		}

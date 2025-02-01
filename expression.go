@@ -2,34 +2,112 @@ package ddbfns
 
 import "github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 
-// And is a zero-value-aware variant of expression.And where the left argument can be the zero-value.
-func And(left expression.ConditionBuilder, right expression.ConditionBuilder, other ...expression.ConditionBuilder) expression.ConditionBuilder {
-	if left.IsSet() {
-		return left.And(right, other...)
+// And adds an expression.And to the condition expression.
+func (o *DeleteOps) And(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *DeleteOps {
+	if o.condition.IsSet() {
+		o.condition = o.condition.And(right, other...)
+		return o
 	}
+
 	switch len(other) {
 	case 0:
-		return right
+		o.condition = right
 	case 1:
-		return right.And(other[0])
+		o.condition = right.And(other[0])
 	default:
-		return right.And(other[0], other[1:]...)
+		o.condition = right.And(other[0], other[1:]...)
 	}
+	return o
 }
 
-// Or is a zero-value-aware variant of expression.Or where the left argument can be the zero-value.
-func Or(left expression.ConditionBuilder, right expression.ConditionBuilder, other ...expression.ConditionBuilder) expression.ConditionBuilder {
-	if left.IsSet() {
-		return left.Or(right, other...)
+// Or adds an expression.And to the condition expression.
+func (o *DeleteOps) Or(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *DeleteOps {
+	if o.condition.IsSet() {
+		o.condition = o.condition.Or(right, other...)
+		return o
 	}
+
 	switch len(other) {
 	case 0:
-		return right
+		o.condition = right
 	case 1:
-		return right.Or(other[0])
+		o.condition = right.Or(other[0])
 	default:
-		return right.Or(other[0], other[1:]...)
+		o.condition = right.Or(other[0], other[1:]...)
 	}
+	return o
+}
+
+// And adds an expression.And to the condition expression.
+func (o *PutOpts) And(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *PutOpts {
+	if o.condition.IsSet() {
+		o.condition = o.condition.And(right, other...)
+		return o
+	}
+
+	switch len(other) {
+	case 0:
+		o.condition = right
+	case 1:
+		o.condition = right.And(other[0])
+	default:
+		o.condition = right.And(other[0], other[1:]...)
+	}
+	return o
+}
+
+// Or adds an expression.And to the condition expression.
+func (o *PutOpts) Or(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *PutOpts {
+	if o.condition.IsSet() {
+		o.condition = o.condition.Or(right, other...)
+		return o
+	}
+
+	switch len(other) {
+	case 0:
+		o.condition = right
+	case 1:
+		o.condition = right.Or(other[0])
+	default:
+		o.condition = right.Or(other[0], other[1:]...)
+	}
+	return o
+}
+
+// And adds an expression.And to the condition expression.
+func (o *UpdateOpts) And(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *UpdateOpts {
+	if o.condition.IsSet() {
+		o.condition = o.condition.And(right, other...)
+		return o
+	}
+
+	switch len(other) {
+	case 0:
+		o.condition = right
+	case 1:
+		o.condition = right.And(other[0])
+	default:
+		o.condition = right.And(other[0], other[1:]...)
+	}
+	return o
+}
+
+// Or adds an expression.And to the condition expression.
+func (o *UpdateOpts) Or(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *UpdateOpts {
+	if o.condition.IsSet() {
+		o.condition = o.condition.Or(right, other...)
+		return o
+	}
+
+	switch len(other) {
+	case 0:
+		o.condition = right
+	case 1:
+		o.condition = right.Or(other[0])
+	default:
+		o.condition = right.Or(other[0], other[1:]...)
+	}
+	return o
 }
 
 // UpdateBuilder helper that offers SetOrRemove in addition to simplifying existing methods from expression.UpdateBuilder.
@@ -45,6 +123,31 @@ func NewUpdateBuilder() *UpdateBuilder {
 	return &UpdateBuilder{}
 }
 
+// Build returns the underlying expression.UpdateBuilder.
+func (b *UpdateBuilder) Build() expression.UpdateBuilder {
+	return b.update
+}
+
+// Add adds an expression.UpdateBuilder.Add expression.
+//
+// Like all other UpdateBuilder methods, the name and value will be wrapped with an `expression.Name` and
+// `expression.Value`.
+func (b *UpdateBuilder) Add(name string, value interface{}) *UpdateBuilder {
+	b.update = b.update.Add(expression.Name(name), expression.Value(value))
+
+	return b
+}
+
+// Add adds an expression.UpdateBuilder.Add expression.
+//
+// Like all other UpdateOpts methods to modify the update expression, the name and value will be wrapped with an
+// `expression.Name` and `expression.Value`.
+func (o *UpdateOpts) Add(name string, value interface{}) *UpdateOpts {
+	o.update = o.update.Add(expression.Name(name), expression.Value(value))
+
+	return o
+}
+
 // Delete adds an expression.UpdateBuilder.Delete expression.
 //
 // Like all other UpdateBuilder methods, the name and value will be wrapped with an `expression.Name` and
@@ -55,6 +158,16 @@ func (b *UpdateBuilder) Delete(name string, value interface{}) *UpdateBuilder {
 	return b
 }
 
+// Delete adds an expression.UpdateBuilder.Delete expression.
+//
+// Like all other UpdateOpts methods to modify the update expression, the name and value will be wrapped with an
+// `expression.Name` and `expression.Value`.
+func (o *UpdateOpts) Delete(name string, value interface{}) *UpdateOpts {
+	o.update = o.update.Delete(expression.Name(name), expression.Value(value))
+
+	return o
+}
+
 // Set adds an expression.UpdateBuilder.Set expression.
 //
 // Like all other UpdateBuilder methods, the name and value will be wrapped with an `expression.Name` and
@@ -63,6 +176,16 @@ func (b *UpdateBuilder) Set(name string, value interface{}) *UpdateBuilder {
 	b.update = b.update.Set(expression.Name(name), expression.Value(value))
 
 	return b
+}
+
+// Set adds an expression.UpdateBuilder.Set expression.
+//
+// Like all other UpdateOpts methods to modify the update expression, the name and value will be wrapped with an
+// `expression.Name` and `expression.Value`.
+func (o *UpdateOpts) Set(name string, value interface{}) *UpdateOpts {
+	o.update = o.update.Set(expression.Name(name), expression.Value(value))
+
+	return o
 }
 
 // SetOrRemove adds either Set or Remove action to the update expression.
@@ -98,6 +221,7 @@ func (b *UpdateBuilder) Set(name string, value interface{}) *UpdateBuilder {
 func (b *UpdateBuilder) SetOrRemove(set, remove bool, name string, value interface{}) *UpdateBuilder {
 	if set {
 		b.update = b.update.Set(expression.Name(name), expression.Value(value))
+		return b
 	}
 
 	if remove {
@@ -105,6 +229,23 @@ func (b *UpdateBuilder) SetOrRemove(set, remove bool, name string, value interfa
 	}
 
 	return b
+}
+
+// SetOrRemove is the UpdateOpts equivalent of [UpdateBuilder.SetOrRemove].
+//
+// Like all other UpdateOpts methods to modify the update expression, the name and value will be wrapped with an
+// `expression.Name` and `expression.Value`.
+func (o *UpdateOpts) SetOrRemove(set, remove bool, name string, value interface{}) *UpdateOpts {
+	if set {
+		o.update = o.update.Set(expression.Name(name), expression.Value(value))
+		return o
+	}
+
+	if remove {
+		o.update = o.update.Remove(expression.Name(name))
+	}
+
+	return o
 }
 
 // Remove adds an expression.UpdateBuilder.Set expression.
@@ -115,4 +256,14 @@ func (b *UpdateBuilder) Remove(name string) *UpdateBuilder {
 	b.update = b.update.Remove(expression.Name(name))
 
 	return b
+}
+
+// Remove adds an expression.UpdateBuilder.Set expression.
+//
+// Like all other UpdateOpts methods to modify the update expression, the name and value will be wrapped with an
+// `expression.Name` and `expression.Value`.
+func (o *UpdateOpts) Remove(name string) *UpdateOpts {
+	o.update = o.update.Remove(expression.Name(name))
+
+	return o
 }

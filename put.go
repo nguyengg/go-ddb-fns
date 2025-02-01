@@ -31,7 +31,8 @@ type PutOpts struct {
 	// ReturnValuesOnConditionCheckFailure modifies the [dynamodb.PutItemInput.ReturnValuesOnConditionCheckFailure].
 	ReturnValuesOnConditionCheckFailure types.ReturnValuesOnConditionCheckFailure
 
-	out interface{}
+	condition expression.ConditionBuilder
+	out       interface{}
 }
 
 // Put creates the PutItem request for the given item.
@@ -72,7 +73,6 @@ func (f *Fns) Put(v interface{}, optFns ...func(*PutOpts)) (*dynamodb.PutItemInp
 	}
 
 	iv := reflect.Indirect(reflect.ValueOf(v))
-	condition := expression.ConditionBuilder{}
 
 	if versionAttr := attrs.Version; !opts.DisableOptimisticLocking && versionAttr != nil {
 		version, err := versionAttr.Get(iv)
@@ -82,16 +82,16 @@ func (f *Fns) Put(v interface{}, optFns ...func(*PutOpts)) (*dynamodb.PutItemInp
 
 		switch {
 		case version.IsZero():
-			condition = expression.Name(attrs.HashKey.Name).AttributeNotExists()
+			opts.And(expression.Name(attrs.HashKey.Name).AttributeNotExists())
 			item[versionAttr.Name] = &types.AttributeValueMemberN{Value: "1"}
 		case version.CanInt():
-			condition = expression.Name(versionAttr.Name).Equal(expression.Value(item[versionAttr.Name]))
+			opts.And(expression.Name(versionAttr.Name).Equal(expression.Value(item[versionAttr.Name])))
 			item[versionAttr.Name] = &types.AttributeValueMemberN{Value: strconv.FormatInt(version.Int()+1, 10)}
 		case version.CanUint():
-			condition = expression.Name(versionAttr.Name).Equal(expression.Value(item[versionAttr.Name]))
+			opts.And(expression.Name(versionAttr.Name).Equal(expression.Value(item[versionAttr.Name])))
 			item[versionAttr.Name] = &types.AttributeValueMemberN{Value: strconv.FormatUint(version.Uint()+1, 10)}
 		case version.CanFloat():
-			condition = expression.Name(versionAttr.Name).Equal(expression.Value(item[versionAttr.Name]))
+			opts.And(expression.Name(versionAttr.Name).Equal(expression.Value(item[versionAttr.Name])))
 			item[versionAttr.Name] = &types.AttributeValueMemberN{Value: strconv.FormatFloat(version.Float(), 'f', -1, 64)}
 		default:
 			panic(fmt.Errorf("version attribute's type (%s) is unknown numeric type", version.Type()))
@@ -147,8 +147,8 @@ func (f *Fns) Put(v interface{}, optFns ...func(*PutOpts)) (*dynamodb.PutItemInp
 		}
 	}
 
-	if condition.IsSet() {
-		expr, err := expression.NewBuilder().WithCondition(condition).Build()
+	if opts.condition.IsSet() {
+		expr, err := expression.NewBuilder().WithCondition(opts.condition).Build()
 		if err != nil {
 			return nil, fmt.Errorf("build expressions error: %w", err)
 		}

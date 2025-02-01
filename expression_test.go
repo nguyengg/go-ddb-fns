@@ -1,15 +1,18 @@
 package ddbfns
 
 import (
+	"testing"
+
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestSetOrRemove(t *testing.T) {
 	expr, err := expression.NewBuilder().
-		WithUpdate(SetOrRemove(expression.UpdateBuilder{}, true, true, "notes", "hello, world!")).
+		WithUpdate(NewUpdateBuilder().
+			SetOrRemove(true, true, "notes", "hello, world!").
+			Build()).
 		Build()
 	if err != nil {
 		t.Errorf("SetOrRemove() error: %v", err)
@@ -22,7 +25,10 @@ func TestSetOrRemove(t *testing.T) {
 
 func TestSetOrRemoveWithExistingUpdateExpression(t *testing.T) {
 	expr, err := expression.NewBuilder().
-		WithUpdate(SetOrRemove(expression.Set(expression.Name("version"), expression.Value(3)), false, true, "notes", "hello, world!")).
+		WithUpdate(NewUpdateBuilder().
+			Set("version", 3).
+			SetOrRemove(false, true, "notes", "hello, world!").
+			Build()).
 		Build()
 	if err != nil {
 		t.Errorf("SetOrRemove() error: %v", err)

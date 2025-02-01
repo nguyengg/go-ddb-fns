@@ -31,10 +31,15 @@ type UpdateOpts struct {
 	// ReturnValuesOnConditionCheckFailure modifies the [dynamodb.UpdateItemInput.ReturnValuesOnConditionCheckFailure].
 	ReturnValuesOnConditionCheckFailure types.ReturnValuesOnConditionCheckFailure
 
-	out interface{}
+	update    expression.UpdateBuilder
+	condition expression.ConditionBuilder
+	out       interface{}
 }
 
 // Update creates the UpdateItem request for the given item and at least one update expression.
+//
+// The initial update expression (specified by argument "initialUpdate") can be zero value or nil, in which case you
+// must use the various UpdateOpts functions to provide at least one update expression.
 //
 // If the item's version is at its zero value, `attribute_not_exists(#hash_key)` is used as the condition expression
 // to prevent overriding an existing item with the same key in database. An `ADD #version 1` update expression will be
@@ -44,10 +49,10 @@ type UpdateOpts struct {
 // optimistic locking. An `ADD #version 1` update expression will be used to update the version.
 //
 // Modified time will always be set to [time.Now] unless disabled by UpdateOpts.
-func (f *Fns) Update(v interface{}, update expression.UpdateBuilder, optFns ...func(*UpdateOpts)) (*dynamodb.UpdateItemInput, error) {
+func (f *Fns) Update(v interface{}, initialUpdate expression.UpdateBuilder, optFns ...func(*UpdateOpts)) (*dynamodb.UpdateItemInput, error) {
 	f.init.Do(f.initFn)
 
-	opts := &UpdateOpts{}
+	opts := &UpdateOpts{update: initialUpdate}
 	for _, fn := range optFns {
 		fn(opts)
 	}
@@ -75,7 +80,6 @@ func (f *Fns) Update(v interface{}, update expression.UpdateBuilder, optFns ...f
 	}
 
 	iv := reflect.Indirect(reflect.ValueOf(v))
-	condition := expression.ConditionBuilder{}
 
 	if versionAttr := attrs.Version; !opts.DisableOptimisticLocking && versionAttr != nil {
 		version, err := versionAttr.Get(iv)
@@ -85,17 +89,17 @@ func (f *Fns) Update(v interface{}, update expression.UpdateBuilder, optFns ...f
 
 		switch {
 		case version.IsZero():
-			condition = expression.Name(attrs.HashKey.Name).AttributeNotExists()
-			update = update.Set(expression.Name(versionAttr.Name), expression.Value(&types.AttributeValueMemberN{Value: "1"}))
+			opts.And(expression.Name(attrs.HashKey.Name).AttributeNotExists())
+			opts.Set(versionAttr.Name, &types.AttributeValueMemberN{Value: "1"})
 		case version.CanInt():
-			condition = expression.Name(versionAttr.Name).Equal(expression.Value(&types.AttributeValueMemberN{Value: strconv.FormatInt(version.Int(), 10)}))
-			update = update.Add(expression.Name(versionAttr.Name), expression.Value(1))
+			opts.And(expression.Name(versionAttr.Name).Equal(expression.Value(&types.AttributeValueMemberN{Value: strconv.FormatInt(version.Int(), 10)})))
+			opts.Add(versionAttr.Name, 1)
 		case version.CanUint():
-			condition = expression.Name(versionAttr.Name).Equal(expression.Value(&types.AttributeValueMemberN{Value: strconv.FormatUint(version.Uint(), 10)}))
-			update = update.Add(expression.Name(versionAttr.Name), expression.Value(1))
+			opts.And(expression.Name(versionAttr.Name).Equal(expression.Value(&types.AttributeValueMemberN{Value: strconv.FormatUint(version.Uint(), 10)})))
+			opts.Add(versionAttr.Name, 1)
 		case version.CanFloat():
-			condition = expression.Name(versionAttr.Name).Equal(expression.Value(&types.AttributeValueMemberN{Value: strconv.FormatFloat(version.Float(), 'f', -1, 64)}))
-			update = update.Add(expression.Name(versionAttr.Name), expression.Value(1))
+			opts.And(expression.Name(versionAttr.Name).Equal(expression.Value(&types.AttributeValueMemberN{Value: strconv.FormatFloat(version.Float(), 'f', -1, 64)})))
+			opts.Add(versionAttr.Name, 1)
 		default:
 			panic(fmt.Errorf("version attribute's type (%s) is unknown numeric type", version.Type()))
 		}
@@ -122,14 +126,14 @@ func (f *Fns) Update(v interface{}, update expression.UpdateBuilder, optFns ...f
 			}
 		}
 
-		update = update.Set(expression.Name(modifiedTimeAttr.Name), expression.Value(av))
+		opts.Set(modifiedTimeAttr.Name, av)
 	}
 
 	var expr expression.Expression
-	if condition.IsSet() {
-		expr, err = expression.NewBuilder().WithUpdate(update).WithCondition(condition).Build()
+	if opts.condition.IsSet() {
+		expr, err = expression.NewBuilder().WithUpdate(opts.update).WithCondition(opts.condition).Build()
 	} else {
-		expr, err = expression.NewBuilder().WithUpdate(update).Build()
+		expr, err = expression.NewBuilder().WithUpdate(opts.update).Build()
 	}
 	if err != nil {
 		return nil, fmt.Errorf("build expressions error: %w", err)
