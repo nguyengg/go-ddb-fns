@@ -192,6 +192,6 @@ func Put(v interface{}, optFns ...func(*PutOpts)) (*dynamodb.PutItemInput, error
 }
 
 // DoPut is a wrapper around [DefaultFns.DoPut]; see [Fns.DoPut] for more information.
-func DoPut(ctx context.Context, client *dynamodb.Client, v interface{}, optFns ...func(*PutOpts)) (*dynamodb.PutItemInput, error) {
-	return DefaultFns.Put(v, optFns...)
+func DoPut(ctx context.Context, client *dynamodb.Client, v interface{}, optFns ...func(*PutOpts)) (*dynamodb.PutItemOutput, error) {
+	return DefaultFns.DoPut(v, optFns...)
 }
