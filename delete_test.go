@@ -8,7 +8,7 @@ import (
 
 func TestFns_DeleteWithVersion(t *testing.T) {
 	type Test struct {
-		Id      string `dynamodbav:"id,hashkey"`
+		Id      string `dynamodbav:"id,hashkey" tableName:""`
 		Sort    string `dynamodbav:"sort,sortkey"`
 		Version int64  `dynamodbav:"version,version"`
 	}
@@ -37,7 +37,7 @@ func TestFns_DeleteWithVersion(t *testing.T) {
 
 func TestFns_DeleteNoVersion(t *testing.T) {
 	type Test struct {
-		Id string `dynamodbav:"id,hashkey"`
+		Id string `dynamodbav:"id,hashkey" tableName:""`
 	}
 	input := Test{
 		Id: "hello",

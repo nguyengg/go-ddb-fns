@@ -82,43 +82,44 @@ func (f *Fns) ParseFromStruct(v interface{}, optFns ...func(*ParseOpts)) error {
 // ParseFromType parses and caches the struct tags given by its type.
 //
 // Returns an error if there are validation issues.
-func (f *Fns) ParseFromType(typ reflect.Type, optFns ...func(*ParseOpts)) error {
+func (f *Fns) ParseFromType(t reflect.Type, optFns ...func(*ParseOpts)) error {
 	opts := ParseOpts{}
 	for _, fn := range optFns {
 		fn(&opts)
 	}
 
-	m, err := internal.ParseFromType(typ)
+	m, err := internal.ParseFromType(t)
 	if err != nil {
 		return err
 	}
 
 	if m.HashKey == nil {
-		return fmt.Errorf(`no hashKey field in type "%s"`, typ.Name())
+		return fmt.Errorf(`no hashKey field in type "%s"`, t.Name())
 	}
 	if opts.MustHaveVersion && m.Version == nil {
-		return fmt.Errorf(`no version field in type "%s"`, typ.Name())
+		return fmt.Errorf(`no version field in type "%s"`, t.Name())
 	}
 	if opts.MustHaveTimestamps && m.CreatedTime == nil && m.ModifiedTime == nil {
-		return fmt.Errorf(`no timestamp fields in type "%s"`, typ.Name())
+		return fmt.Errorf(`no timestamp fields in type "%s"`, t.Name())
 	}
 
-	f.cache.Store(typ, m)
+	f.cache.Store(t, m)
 	return nil
 }
 
-func (f *Fns) loadOrParse(typ reflect.Type) (*internal.Model, error) {
-	v, ok := f.cache.Load(typ)
+func (f *Fns) loadOrParse(t reflect.Type) (*internal.Model, error) {
+	t = internal.DereferencedType(t)
+	v, ok := f.cache.Load(t)
 	if ok {
 		return v.(*internal.Model), nil
 	}
 
-	m, err := internal.ParseFromType(typ)
+	m, err := internal.ParseFromType(t)
 	if err != nil {
 		return nil, err
 	}
 
-	f.cache.Store(typ, m)
+	f.cache.Store(t, m)
 	return m, nil
 }
 

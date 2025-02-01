@@ -24,35 +24,37 @@ type Model struct {
 	ModifiedTime *Attribute
 }
 
+// DereferencedType returns the innermost type that is not reflect.Interface or reflect.Ptr.
+func DereferencedType(t reflect.Type) reflect.Type {
+	for k := t.Kind(); k == reflect.Interface || k == reflect.Ptr; {
+		t = t.Elem()
+		k = t.Kind()
+	}
+
+	return t
+}
+
 // ParseFromStruct parses the struct tags given by an instance of the struct.
 //
 // Returns an error if there are validation issues.
 func ParseFromStruct(v interface{}) (*Model, error) {
-	switch t := reflect.TypeOf(v); t.Kind() {
-	case reflect.Interface, reflect.Ptr:
-		for t.Kind() == reflect.Interface || t.Kind() == reflect.Ptr {
-			t = t.Elem()
-		}
-		fallthrough
-	default:
-		return ParseFromType(t)
-	}
+	return ParseFromType(reflect.TypeOf(v))
 }
 
 // ParseFromType parses the struct tags given by its type.
 //
 // Returns an error if there are validation issues.
-func ParseFromType(typ reflect.Type) (*Model, error) {
-	tagKey := "dynamodbav"
-	m := &Model{StructType: typ}
+func ParseFromType(t reflect.Type) (*Model, error) {
+	t = DereferencedType(t)
+	m := &Model{StructType: t}
 
-	for i, n := 0, typ.NumField(); i < n; i++ {
-		structField := typ.Field(i)
+	for i, n := 0, t.NumField(); i < n; i++ {
+		structField := t.Field(i)
 		if !structField.IsExported() {
 			continue
 		}
 
-		tag := structField.Tag.Get(tagKey)
+		tag := structField.Tag.Get("dynamodbav")
 		if tag == "" {
 			continue
 		}
@@ -68,7 +70,7 @@ func ParseFromType(typ reflect.Type) (*Model, error) {
 			switch tag {
 			case "hashkey":
 				if m.HashKey != nil {
-					return nil, fmt.Errorf(`found multiple hashkey fields in type "%s"`, typ.Name())
+					return nil, fmt.Errorf(`found multiple hashkey fields in type "%s"`, t.Name())
 				}
 
 				if !validKeyAttribute(structField) {
@@ -83,7 +85,7 @@ func ParseFromType(typ reflect.Type) (*Model, error) {
 				}
 			case "sortkey":
 				if m.SortKey != nil {
-					return nil, fmt.Errorf(`found multiple sortkey fields in type "%s"`, typ.Name())
+					return nil, fmt.Errorf(`found multiple sortkey fields in type "%s"`, t.Name())
 				}
 
 				if !validKeyAttribute(structField) {
@@ -93,7 +95,7 @@ func ParseFromType(typ reflect.Type) (*Model, error) {
 				m.SortKey = attr
 			case "version":
 				if m.Version != nil {
-					return nil, fmt.Errorf(`found multiple version fields in type "%s"`, typ.Name())
+					return nil, fmt.Errorf(`found multiple version fields in type "%s"`, t.Name())
 				}
 
 				if !validVersionAttribute(structField) {
@@ -103,7 +105,7 @@ func ParseFromType(typ reflect.Type) (*Model, error) {
 				m.Version = attr
 			case "createdTime":
 				if m.CreatedTime != nil {
-					return nil, fmt.Errorf(`found multiple createdTime fields in type "%s"`, typ.Name())
+					return nil, fmt.Errorf(`found multiple createdTime fields in type "%s"`, t.Name())
 				}
 
 				if !validTimeAttribute(structField) {
@@ -113,7 +115,7 @@ func ParseFromType(typ reflect.Type) (*Model, error) {
 				m.CreatedTime = attr
 			case "modifiedTime":
 				if m.ModifiedTime != nil {
-					return nil, fmt.Errorf(`found multiple modifiedTime fields in type "%s"`, typ.Name())
+					return nil, fmt.Errorf(`found multiple modifiedTime fields in type "%s"`, t.Name())
 				}
 
 				if !validTimeAttribute(structField) {

@@ -12,7 +12,7 @@ import (
 
 func TestFns_UpdateNewVersion(t *testing.T) {
 	type Test struct {
-		Id           string    `dynamodbav:"id,hashkey"`
+		Id           string    `dynamodbav:"id,hashkey" tableName:""`
 		Notes        string    `dynamodbav:"notes"`
 		Version      int64     `dynamodbav:"version,version"`
 		CreatedTime  time.Time `dynamodbav:"createdTime,createdTime"`
@@ -60,7 +60,7 @@ func TestFns_UpdateNewVersion(t *testing.T) {
 
 func TestFns_UpdateNoVersion(t *testing.T) {
 	type Test struct {
-		Id string `dynamodbav:"id,hashkey"`
+		Id string `dynamodbav:"id,hashkey" tableName:""`
 	}
 	input := Test{
 		Id: "hello",
@@ -84,7 +84,7 @@ func TestFns_UpdateNoVersion(t *testing.T) {
 
 func TestFns_UpdateIncrementVersion(t *testing.T) {
 	type Test struct {
-		Id      string `dynamodbav:"id,hashkey"`
+		Id      string `dynamodbav:"id,hashkey" tableName:""`
 		Version int64  `dynamodbav:"version,version"`
 	}
 	input := Test{

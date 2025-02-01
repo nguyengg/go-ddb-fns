@@ -10,7 +10,7 @@ import (
 // both ParseFromStruct and ParseFromType should return exact same values.
 func TestParse(t *testing.T) {
 	type Test struct {
-		Id           string    `dynamodbav:",hashkey"`
+		Id           string    `dynamodbav:",hashkey" tableName:""`
 		Sort         string    `dynamodbav:",sortkey"`
 		Version      int64     `dynamodbav:",version"`
 		CreatedTime  time.Time `dynamodbav:",createdTime"`

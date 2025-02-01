@@ -11,7 +11,7 @@ import (
 
 func TestFns_PutNewVersion(t *testing.T) {
 	type Test struct {
-		Id           string    `dynamodbav:"id,hashkey"`
+		Id           string    `dynamodbav:"id,hashkey" tableName:""`
 		Sort         string    `dynamodbav:"sort,sortkey"`
 		Version      int64     `dynamodbav:"version,version"`
 		CreatedTime  time.Time `dynamodbav:"createdTime,createdTime"`
@@ -45,7 +45,7 @@ func TestFns_PutNewVersion(t *testing.T) {
 
 func TestFns_PutNoVersion(t *testing.T) {
 	type Test struct {
-		Id          string    `dynamodbav:"id,hashkey"`
+		Id          string    `dynamodbav:"id,hashkey" tableName:""`
 		CreatedTime time.Time `dynamodbav:"createdTime,createdTime,unixtime"`
 	}
 	input := Test{
@@ -76,7 +76,7 @@ func TestFns_PutNoVersion(t *testing.T) {
 
 func TestFns_PutIncrementVersion(t *testing.T) {
 	type Test struct {
-		Id      string `dynamodbav:"id,hashkey"`
+		Id      string `dynamodbav:"id,hashkey" tableName:""`
 		Version int64  `dynamodbav:"version,version"`
 	}
 	input := Test{
