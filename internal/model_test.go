@@ -28,4 +28,12 @@ func TestParse(t *testing.T) {
 	}
 
 	assert.Equal(t, a, b)
+
+	// can also parse from pointer value.
+	c, err := ParseFromStruct(&Test{})
+	if err != nil {
+		t.Errorf("ParseFromStruct() error: %v", err)
+	}
+
+	assert.Equal(t, a, c)
 }

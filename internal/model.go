@@ -28,7 +28,15 @@ type Model struct {
 //
 // Returns an error if there are validation issues.
 func ParseFromStruct(v interface{}) (*Model, error) {
-	return ParseFromType(reflect.TypeOf(v))
+	switch t := reflect.TypeOf(v); t.Kind() {
+	case reflect.Interface, reflect.Ptr:
+		for t.Kind() == reflect.Interface || t.Kind() == reflect.Ptr {
+			t = t.Elem()
+		}
+		fallthrough
+	default:
+		return ParseFromType(t)
+	}
 }
 
 // ParseFromType parses the struct tags given by its type.
