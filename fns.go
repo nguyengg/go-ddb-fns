@@ -94,7 +94,7 @@ func (f *Fns) ParseFromType(t reflect.Type, optFns ...func(*ParseOpts)) error {
 	}
 
 	if m.HashKey == nil {
-		return fmt.Errorf(`no hashKey field in type "%s"`, t.Name())
+		return fmt.Errorf(`no hashkey field in type "%s"`, t.Name())
 	}
 	if opts.MustHaveVersion && m.Version == nil {
 		return fmt.Errorf(`no version field in type "%s"`, t.Name())
