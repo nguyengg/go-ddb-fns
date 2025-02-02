@@ -36,7 +36,7 @@ type DeleteOpts struct {
 // Delete creates the DeleteItem request for the given item.
 //
 // The current item's version is used in the `#version = :version` condition expression to perform optimistic locking.
-func (f *Fns) Delete(v interface{}, optFns ...func(ops *DeleteOpts)) (*dynamodb.DeleteItemInput, error) {
+func (f *Fns) Delete(v interface{}, optFns ...func(*DeleteOpts)) (*dynamodb.DeleteItemInput, error) {
 	f.init.Do(f.initFn)
 
 	opts := &DeleteOpts{}
