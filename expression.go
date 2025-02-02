@@ -3,7 +3,7 @@ package ddbfns
 import "github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 
 // And adds an expression.And to the condition expression.
-func (o *DeleteOps) And(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *DeleteOps {
+func (o *DeleteOpts) And(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *DeleteOpts {
 	if o.condition.IsSet() {
 		o.condition = o.condition.And(right, other...)
 		return o
@@ -21,7 +21,7 @@ func (o *DeleteOps) And(right expression.ConditionBuilder, other ...expression.C
 }
 
 // Or adds an expression.And to the condition expression.
-func (o *DeleteOps) Or(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *DeleteOps {
+func (o *DeleteOpts) Or(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *DeleteOpts {
 	if o.condition.IsSet() {
 		o.condition = o.condition.Or(right, other...)
 		return o
