@@ -20,8 +20,8 @@ func (o *UpdateOpts) WithTableName(tableName string) *UpdateOpts {
 	return o
 }
 
-// WithTableName overrides [DeleteOps.TableName].
-func (o *DeleteOps) WithTableName(tableName string) *DeleteOps {
+// WithTableName overrides [DeleteOpts.TableName].
+func (o *DeleteOpts) WithTableName(tableName string) *DeleteOpts {
 	o.TableName = &tableName
 	return o
 }
@@ -47,8 +47,8 @@ func (o *UpdateOpts) WithReturnValues(returnValues types.ReturnValue) *UpdateOpt
 	return o
 }
 
-// WithReturnValues overrides [DeleteOps.ReturnValues].
-func (o *DeleteOps) WithReturnValues(returnValues types.ReturnValue) *DeleteOps {
+// WithReturnValues overrides [DeleteOpts.ReturnValues].
+func (o *DeleteOpts) WithReturnValues(returnValues types.ReturnValue) *DeleteOpts {
 	o.ReturnValues = returnValues
 	return o
 }
@@ -65,8 +65,8 @@ func (o *UpdateOpts) WithReturnValuesOnConditionCheckFailure(returnValuesOnCondi
 	return o
 }
 
-// WithReturnValuesOnConditionCheckFailure overrides [DeleteOps.ReturnValuesOnConditionCheckFailure].
-func (o *DeleteOps) WithReturnValuesOnConditionCheckFailure(returnValuesOnConditionCheckFailure types.ReturnValuesOnConditionCheckFailure) *DeleteOps {
+// WithReturnValuesOnConditionCheckFailure overrides [DeleteOpts.ReturnValuesOnConditionCheckFailure].
+func (o *DeleteOpts) WithReturnValuesOnConditionCheckFailure(returnValuesOnConditionCheckFailure types.ReturnValuesOnConditionCheckFailure) *DeleteOpts {
 	o.ReturnValuesOnConditionCheckFailure = returnValuesOnConditionCheckFailure
 	return o
 }
@@ -99,7 +99,7 @@ func (o *UpdateOpts) Decode(out interface{}) *UpdateOpts {
 // Unmarshalling error will be returned to caller. If the returned item is empty, unmarshalling will not happen.
 //
 // Should be used with WithReturnValues or WithReturnValuesOnConditionCheckFailure.
-func (o *DeleteOps) Decode(out interface{}) *DeleteOps {
+func (o *DeleteOpts) Decode(out interface{}) *DeleteOpts {
 	o.out = out
 	return o
 }
