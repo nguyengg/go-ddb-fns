@@ -248,6 +248,20 @@ func (o *UpdateOpts) SetOrRemove(set, remove bool, name string, value interface{
 	return o
 }
 
+// SetOrRemoveStringPointer is a variant of SetOrRemove that creates a REMOVE if the pointer is nil, a SET otherwise.
+//
+// Like all other UpdateOpts methods to modify the update expression, the name and value will be wrapped with an
+// `expression.Name` and `expression.Value`.
+func (o *UpdateOpts) SetOrRemoveStringPointer(name string, value *string) *UpdateOpts {
+	if value != nil {
+		o.update = o.update.Set(expression.Name(name), expression.Value(*value))
+		return o
+	}
+
+	o.update = o.update.Remove(expression.Name(name))
+	return o
+}
+
 // Remove adds an expression.UpdateBuilder.Set expression.
 //
 // Like all other UpdateBuilder methods, the name and value will be wrapped with an `expression.Name` and
