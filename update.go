@@ -15,9 +15,6 @@ import (
 
 // Update creates the UpdateItem request for the given item and at least one update expression.
 //
-// The initial update expression (specified by argument "initialUpdate") can be zero value or nil, in which case you
-// must use the various UpdateOpts functions to provide at least one update expression.
-//
 // If the item's version is at its zero value, `attribute_not_exists(#hash_key)` is used as the condition expression
 // to prevent overriding an existing item with the same key in database. An `ADD #version 1` update expression will be
 // used to update the version.
@@ -26,10 +23,11 @@ import (
 // optimistic locking. An `ADD #version 1` update expression will be used to update the version.
 //
 // Modified time will always be set to [time.Now] unless disabled by UpdateOpts.
-func (f *Fns) Update(v interface{}, initialUpdate expression.UpdateBuilder, optFns ...func(*UpdateOpts)) (*dynamodb.UpdateItemInput, error) {
+func (f *Fns) Update(v interface{}, requiredUpdateFn func(*UpdateOpts), optFns ...func(*UpdateOpts)) (*dynamodb.UpdateItemInput, error) {
 	f.init.Do(f.initFn)
 
-	opts := &UpdateOpts{update: initialUpdate}
+	opts := &UpdateOpts{}
+	requiredUpdateFn(opts)
 	for _, fn := range optFns {
 		fn(opts)
 	}
@@ -131,13 +129,13 @@ func (f *Fns) Update(v interface{}, initialUpdate expression.UpdateBuilder, optF
 }
 
 // DoUpdate performs a [Fns.Update] and then executes the request with the specified DynamoDB client.
-func (f *Fns) DoUpdate(ctx context.Context, client *dynamodb.Client, v interface{}, update expression.UpdateBuilder, optFns ...func(*UpdateOpts)) (*dynamodb.UpdateItemOutput, error) {
+func (f *Fns) DoUpdate(ctx context.Context, client *dynamodb.Client, v interface{}, requiredUpdateFn func(*UpdateOpts), optFns ...func(*UpdateOpts)) (*dynamodb.UpdateItemOutput, error) {
 	var opts *UpdateOpts
 	optFns = append(optFns, func(o *UpdateOpts) {
 		opts = o
 	})
 
-	input, err := f.Update(v, update, optFns...)
+	input, err := f.Update(v, requiredUpdateFn, optFns...)
 	if err != nil {
 		return nil, err
 	}
@@ -157,11 +155,11 @@ func (f *Fns) DoUpdate(ctx context.Context, client *dynamodb.Client, v interface
 // Update creates the UpdateItem request for the given item and at least one update expression.
 //
 // Update is a wrapper around [DefaultFns.Update]; see [Fns.Update] for more information.
-func Update(v interface{}, update expression.UpdateBuilder, optFns ...func(opts *UpdateOpts)) (*dynamodb.UpdateItemInput, error) {
-	return DefaultFns.Update(v, update, optFns...)
+func Update(v interface{}, requiredUpdateFn func(*UpdateOpts), optFns ...func(opts *UpdateOpts)) (*dynamodb.UpdateItemInput, error) {
+	return DefaultFns.Update(v, requiredUpdateFn, optFns...)
 }
 
 // DoUpdate is a wrapper around [DefaultFns.DoUpdate]; see [Fns.DoUpdate] for more information.
-func DoUpdate(ctx context.Context, client *dynamodb.Client, v interface{}, update expression.UpdateBuilder, optFns ...func(*UpdateOpts)) (*dynamodb.UpdateItemOutput, error) {
-	return DefaultFns.DoUpdate(ctx, client, v, update, optFns...)
+func DoUpdate(ctx context.Context, client *dynamodb.Client, v interface{}, requiredUpdateFn func(*UpdateOpts), optFns ...func(*UpdateOpts)) (*dynamodb.UpdateItemOutput, error) {
+	return DefaultFns.DoUpdate(ctx, client, v, requiredUpdateFn, optFns...)
 }

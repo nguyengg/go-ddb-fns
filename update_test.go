@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -32,7 +31,9 @@ func TestFns_UpdateNewVersion(t *testing.T) {
 	// this is to make sure the input item is not mutated.
 	before := MustToJSON(input)
 
-	got, err := Update(input, expression.Set(expression.Name("notes"), expression.Value("world!")))
+	got, err := Update(input, func(opts *UpdateOpts) {
+		opts.Set("notes", "world!")
+	})
 	if err != nil {
 		t.Errorf("Update() error = %v", err)
 		return
@@ -69,7 +70,9 @@ func TestFns_UpdateNoVersion(t *testing.T) {
 	// this is to make sure the input item is not mutated.
 	before := MustToJSON(input)
 
-	got, err := Update(input, expression.Set(expression.Name("notes"), expression.Value("world!")))
+	got, err := Update(input, func(opts *UpdateOpts) {
+		opts.Set("notes", "world!")
+	})
 	if err != nil {
 		t.Errorf("Update() error = %v", err)
 		return
@@ -97,7 +100,9 @@ func TestFns_UpdateIncrementVersion(t *testing.T) {
 	before := MustToJSON(input)
 
 	// use pointer to input here to test pointer case as well.
-	got, err := Update(&input, expression.Set(expression.Name("notes"), expression.Value("world!")))
+	got, err := Update(&input, func(opts *UpdateOpts) {
+		opts.Set("notes", "world!")
+	})
 	if err != nil {
 		t.Errorf("Update() error = %v", err)
 		return
