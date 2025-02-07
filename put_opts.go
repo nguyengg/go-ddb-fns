@@ -55,3 +55,39 @@ func (o *PutOpts) WithReturnValuesOnConditionCheckFailure(returnValuesOnConditio
 	o.ReturnValuesOnConditionCheckFailure = returnValuesOnConditionCheckFailure
 	return o
 }
+
+// And adds an expression.And to the condition expression.
+func (o *PutOpts) And(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *PutOpts {
+	if o.condition.IsSet() {
+		o.condition = o.condition.And(right, other...)
+		return o
+	}
+
+	switch len(other) {
+	case 0:
+		o.condition = right
+	case 1:
+		o.condition = right.And(other[0])
+	default:
+		o.condition = right.And(other[0], other[1:]...)
+	}
+	return o
+}
+
+// Or adds an expression.And to the condition expression.
+func (o *PutOpts) Or(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *PutOpts {
+	if o.condition.IsSet() {
+		o.condition = o.condition.Or(right, other...)
+		return o
+	}
+
+	switch len(other) {
+	case 0:
+		o.condition = right
+	case 1:
+		o.condition = right.Or(other[0])
+	default:
+		o.condition = right.Or(other[0], other[1:]...)
+	}
+	return o
+}

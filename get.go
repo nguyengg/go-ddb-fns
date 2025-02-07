@@ -46,7 +46,14 @@ func (f *Fns) Get(v interface{}, optFns ...func(*GetOpts)) (*dynamodb.GetItemInp
 		}
 	}
 
-	if names := opts.projectionExpressionNames; len(names) != 0 {
+	getItemInput := &dynamodb.GetItemInput{
+		Key:                    key,
+		TableName:              opts.TableName,
+		ConsistentRead:         opts.ConsistentRead,
+		ReturnConsumedCapacity: opts.ReturnConsumedCapacity,
+	}
+
+	if names := opts.names; len(names) != 0 {
 		projection := expression.NamesList(expression.Name(names[0]))
 		for _, name := range names[1:] {
 			projection = projection.AddNames(expression.Name(name))
@@ -57,18 +64,11 @@ func (f *Fns) Get(v interface{}, optFns ...func(*GetOpts)) (*dynamodb.GetItemInp
 			return nil, fmt.Errorf("build expressions error: %w", err)
 		}
 
-		opts.ExpressionAttributeNames = expr.Names()
-		opts.ProjectionExpression = expr.Projection()
+		getItemInput.ExpressionAttributeNames = expr.Names()
+		getItemInput.ProjectionExpression = expr.Projection()
 	}
 
-	return &dynamodb.GetItemInput{
-		Key:                      key,
-		TableName:                opts.TableName,
-		ConsistentRead:           opts.ConsistentRead,
-		ExpressionAttributeNames: opts.ExpressionAttributeNames,
-		ProjectionExpression:     opts.ProjectionExpression,
-		ReturnConsumedCapacity:   opts.ReturnConsumedCapacity,
-	}, nil
+	return getItemInput, nil
 }
 
 // DoGet performs a [Fns.Get] and then executes the request with the specified DynamoDB client.

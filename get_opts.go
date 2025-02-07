@@ -1,6 +1,8 @@
 package ddbfns
 
-import "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+import (
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+)
 
 // GetOpts customises [Fns.Get] operations per each invocation.
 type GetOpts struct {
@@ -8,15 +10,11 @@ type GetOpts struct {
 	TableName *string
 	// ConsistentRead modifies the [dynamodb.GetItemInput.ConsistentRead]
 	ConsistentRead *bool
-	// ExpressionAttributeNames modifies the [dynamodb.GetItemInput.ExpressionAttributeNames]
-	ExpressionAttributeNames map[string]string
-	// ProjectionExpression modifies the [dynamodb.GetItemInput.ProjectionExpression]
-	ProjectionExpression *string
 	// ReturnConsumedCapacity modifies the [dynamodb.GetItemInput.ReturnConsumedCapacity]
 	ReturnConsumedCapacity types.ReturnConsumedCapacity
 
-	projectionExpressionNames []string
-	out                       interface{}
+	names []string
+	out   interface{}
 }
 
 // Decode will decode the [dynamodb.GetItemOutput.Item] into the given struct pointer.
@@ -31,5 +29,11 @@ func (o *GetOpts) Decode(out interface{}) *GetOpts {
 // WithTableName overrides [GetOpts.TableName].
 func (o *GetOpts) WithTableName(tableName string) *GetOpts {
 	o.TableName = &tableName
+	return o
+}
+
+// WithProjectionExpression replaces the current projection expression with this.
+func (o *GetOpts) WithProjectionExpression(name string, names ...string) *GetOpts {
+	o.names = append([]string{name}, names...)
 	return o
 }

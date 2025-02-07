@@ -56,3 +56,143 @@ func (o *UpdateOpts) Decode(out interface{}) *UpdateOpts {
 	o.out = out
 	return o
 }
+
+// And adds an expression.And to the condition expression.
+func (o *UpdateOpts) And(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *UpdateOpts {
+	if o.condition.IsSet() {
+		o.condition = o.condition.And(right, other...)
+		return o
+	}
+
+	switch len(other) {
+	case 0:
+		o.condition = right
+	case 1:
+		o.condition = right.And(other[0])
+	default:
+		o.condition = right.And(other[0], other[1:]...)
+	}
+	return o
+}
+
+// Or adds an expression.And to the condition expression.
+func (o *UpdateOpts) Or(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *UpdateOpts {
+	if o.condition.IsSet() {
+		o.condition = o.condition.Or(right, other...)
+		return o
+	}
+
+	switch len(other) {
+	case 0:
+		o.condition = right
+	case 1:
+		o.condition = right.Or(other[0])
+	default:
+		o.condition = right.Or(other[0], other[1:]...)
+	}
+	return o
+}
+
+// Add adds an [expression.UpdateBuilder.Add] expression.
+//
+// Like all other UpdateOpts methods to modify the update expression, the name and value will be wrapped with an
+// `expression.Name` and `expression.Value`.
+func (o *UpdateOpts) Add(name string, value interface{}) *UpdateOpts {
+	o.update = o.update.Add(expression.Name(name), expression.Value(value))
+
+	return o
+}
+
+// Delete adds an [expression.UpdateBuilder.Delete] expression.
+//
+// Like all other UpdateOpts methods to modify the update expression, the name and value will be wrapped with an
+// `expression.Name` and `expression.Value`.
+func (o *UpdateOpts) Delete(name string, value interface{}) *UpdateOpts {
+	o.update = o.update.Delete(expression.Name(name), expression.Value(value))
+
+	return o
+}
+
+// Set adds an [expression.UpdateBuilder.Set] expression.
+//
+// Like all other UpdateOpts methods to modify the update expression, the name and value will be wrapped with an
+// `expression.Name` and `expression.Value`.
+func (o *UpdateOpts) Set(name string, value interface{}) *UpdateOpts {
+	o.update = o.update.Set(expression.Name(name), expression.Value(value))
+
+	return o
+}
+
+// SetOrRemove adds either Set or Remove action to the update expression.
+//
+// If set is true, a SET action will be added.
+// If set is false, only when remove is true then a REMOVE action will be added.
+//
+// | set   | remove | action
+// | true  | *      | SET
+// | false | true   | REMOVE
+// | false | false  | no-op
+//
+// This is useful for distinguishing between PUT/POST (remove=true) that replaces attributes with clobbering behaviour
+// vs. PATCH (remove=false) that will only update attributes that are non-nil. An example is given:
+//
+//	func PUT(body Request) {
+//		// because it's a PUT request, if notes is empty, instead of writing empty string to database, we'll remove it.
+//		opts.SetOrRemove(true, true, "notes", body.Notes)
+//	}
+//
+//	func PATCH(body Request) {
+//		// only when notes is non-empty that we'll update it. an empty notes just means caller didn't try to update it.
+//		opts.SetOrRemove(body.Notes != "", false, "notes", body.Notes)
+//	}
+//
+//	func Update(method string, body Request) {
+//		// an attempt to unify the methods may look like this.
+//		opts.SetOrRemove(expression.UpdateBuilder{}, body.Notes != "", method != "PATCH", "notes", body.Notes)
+//	}
+//
+// Like all other UpdateOpts methods to modify the update expression, the name and value will be wrapped with an
+// `expression.Name` and `expression.Value`.
+func (o *UpdateOpts) SetOrRemove(set, remove bool, name string, value interface{}) *UpdateOpts {
+	if set {
+		o.update = o.update.Set(expression.Name(name), expression.Value(value))
+		return o
+	}
+
+	if remove {
+		o.update = o.update.Remove(expression.Name(name))
+	}
+
+	return o
+}
+
+// SetOrRemoveStringPointer is a specialization of SetOrRemove for string pointer value.
+//
+// If ptr is a nil pointer, no action is taken. If ptr dereferences to an empty string, a REMOVE action is used.
+// A non-empty string otherwise will result in a SET action.
+//
+// Like all other UpdateOpts methods, the name will be wrapped with an `expression.Name` and dereferenced value
+// `expression.Value`.
+func (o *UpdateOpts) SetOrRemoveStringPointer(name string, ptr *string) *UpdateOpts {
+	if ptr == nil {
+		return o
+	}
+
+	if v := *ptr; v != "" {
+		o.update = o.update.Set(expression.Name(name), expression.Value(v))
+		return o
+	}
+
+	o.update = o.update.Remove(expression.Name(name))
+	return o
+}
+
+// Remove adds an [expression.UpdateBuilder.Set] expression.
+//
+// Like all other UpdateOpts methods to modify the update expression, the name and value will be wrapped with an
+// `expression.Name` and `expression.Value`.
+func (o *UpdateOpts) Remove(name string) *UpdateOpts {
+	o.update = o.update.Remove(expression.Name(name))
+
+	return o
+}
