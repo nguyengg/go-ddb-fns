@@ -10,23 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-// GetOpts customises [Fns.Get] operations per each invocation.
-type GetOpts struct {
-	// TableName modifies the [dynamodb.GetItemInput.TableName]
-	TableName *string
-	// ConsistentRead modifies the [dynamodb.GetItemInput.ConsistentRead]
-	ConsistentRead *bool
-	// ExpressionAttributeNames modifies the [dynamodb.GetItemInput.ExpressionAttributeNames]
-	ExpressionAttributeNames map[string]string
-	// ProjectionExpression modifies the [dynamodb.GetItemInput.ProjectionExpression]
-	ProjectionExpression *string
-	// ReturnConsumedCapacity modifies the [dynamodb.GetItemInput.ReturnConsumedCapacity]
-	ReturnConsumedCapacity types.ReturnConsumedCapacity
-
-	projectionExpressionNames []string
-	out                       interface{}
-}
-
 // Get creates the GetItem request for the given item.
 //
 // This is mostly a convenient method to create the GetItemInput without having to manually pull the key attributes out
@@ -128,13 +111,4 @@ func Get(v interface{}, optFns ...func(*GetOpts)) (*dynamodb.GetItemInput, error
 // DoGet is a wrapper around [DefaultFns.DoGet]; see [Fns.DoGet] for more information.
 func DoGet(ctx context.Context, client *dynamodb.Client, v interface{}, optFns ...func(*GetOpts)) (*dynamodb.GetItemOutput, error) {
 	return DefaultFns.DoGet(ctx, client, v, optFns...)
-}
-
-// WithProjectionExpression can be used to set GetOpts.ProjectionExpression and GetOpts.ExpressionAttributeNames.
-//
-// This will override existing values of both GetOpts.ProjectionExpression and GetOpts.ExpressionAttributeNames.
-func WithProjectionExpression(name string, names ...string) func(*GetOpts) {
-	return func(opts *GetOpts) {
-		opts.projectionExpressionNames = append([]string{name}, names...)
-	}
 }
