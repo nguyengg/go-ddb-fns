@@ -19,12 +19,12 @@ package main
 
 import (
 	"context"
+	"time"
+
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	ddbfns "github.com/nguyengg/go-ddb-fns"
-	"time"
 )
 
 type Item struct {
@@ -71,7 +71,8 @@ func main() {
 
 	// Update requires me to specify at least one update expression. Here's an example of how to return updated values
 	// as well.
-	updateItemInput, _ := ddbfns.Update(item, expression.Set(expression.Name("anotherField"), expression.Value("notes")), func(opts *ddbfns.UpdateOpts) {
+	updateItemInput, _ := ddbfns.Update(item, func(opts *ddbfns.UpdateOpts) {
+		opts.Set("anotherField", "notes")
 		opts.ReturnValues = types.ReturnValueAllNew
 	})
 	_, _ = client.UpdateItem(ctx, updateItemInput)
@@ -84,5 +85,26 @@ func main() {
 		Version: 3,
 	})
 	_, _ = client.DeleteItem(ctx, deleteItemInput)
+
+	// all methods above come with a DoXyz version that executes the request for you.
+	// for example, DoGet is used with Decode here in order to perform unmarshalling of the response.
+	key := Item{Id: "hello", Sort: "world"}
+	if getItemOutput, _ := ddbfns.DoGet(ctx, client, key, func(opts *ddbfns.GetOpts) {
+		// must pass a pointer to a struct here.
+		// if it's not a pointer, attributevalue.UnmarshalMap will fail.
+		opts.Decode(&item)
+	}); len(getItemOutput.Item) == 0 {
+		// item with key above doesn't exist.
+	}
+
+	// similarly, you can DoUpdate and return new values like this.
+	_, _ = ddbfns.DoUpdate(ctx, client, key, func(opts *ddbfns.UpdateOpts) {
+		opts.
+			Decode(&item).
+			Set("notes", "hello, world!").
+			WithReturnValues(types.ReturnValueAllNew).
+			WithReturnValuesOnConditionCheckFailure(types.ReturnValuesOnConditionCheckFailureAllOld)
+	})
 }
+
 ```
